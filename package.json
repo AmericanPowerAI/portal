@@ -4,17 +4,18 @@
   "main": "server/app.js",
   "scripts": {
     "start": "node server/app.js",
-    "dev": "nodemon server/app.js"
+    "dev": "nodemon server/app.js",
+    "train-model": "node server/ai/trainModel.js"
   },
   "dependencies": {
+    "@tensorflow/tfjs-node": "^4.6.0",
     "axios": "^1.4.0",
     "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
     "express": "^4.18.2",
     "mongoose": "^7.4.3",
-    "openai": "^4.0.0",
-    "puppeteer": "^21.3.6"
+    "puppeteer": "^21.3.6",
+    "natural": "^5.2.3"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
