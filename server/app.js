@@ -2,8 +2,8 @@ const express = require('express');
 const cors = require('cors');
 const { scrapeIndeedJobs } = require('./scraper/indeedScraper');
 const { scrapeLinkedIn } = require('./scraper/linkedinScraper');
-const { analyzeCompanyNeeds } = require('./ai/needsAnalyzer');
-const { generateApproach } = require('./ai/approachGenerator');
+const needsAnalyzer = require('./ai/needsAnalyzer');
+const approachGenerator = require('./ai/approachGenerator');
 const config = require('./config');
 
 const app = express();
@@ -27,32 +27,31 @@ app.post('/api/find-leads', async (req, res) => {
       jobQueries.map(query => scrapeIndeedJobs(query))
     );
     
-    // 2. Analyze which companies need help
+    // 2. Analyze which companies need help (LOCAL AI)
     const analyzedCompanies = await Promise.all(
       jobResults.flat().map(async company => ({
         ...company,
-        analysis: await analyzeCompanyNeeds(company)
+        analysis: await needsAnalyzer.analyze(company)
       }))
     );
     
     // 3. Find decision makers
     const companiesWithContacts = await Promise.all(
-      analyzedCompanies.filter(c => c.analysis.includes('High')).map(async company => ({
-        ...company,
-        contacts: await scrapeLinkedIn(company.company)
-      }))
+      analyzedCompanies
+        .filter(c => Object.values(c.analysis).some(score => score > 50))
+        .map(async company => ({
+          ...company,
+          contacts: await scrapeLinkedIn(company.company)
+        }))
     );
     
-    // 4. Generate approaches
-    const leads = await Promise.all(
-      companiesWithContacts.map(async company => ({
-        ...company,
-        approaches: await Promise.all(
-          company.contacts.map(contact => 
-            generateApproach(company, contact)
-          )
-      }))
-    );
+    // 4. Generate approaches (LOCAL AI)
+    const leads = companiesWithContacts.map(company => ({
+      ...company,
+      approaches: company.contacts.map(contact => 
+        approachGenerator.generate(company, contact)
+      )
+    }));
     
     res.json({
       success: true,
@@ -70,4 +69,5 @@ app.post('/api/find-leads', async (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log('Using LOCAL AI models - no API keys required');
 });
