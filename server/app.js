@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const mongoose = require('mongoose'); // Added MongoDB requirement
 const { scrapeIndeedJobs } = require('./scraper/indeedScraper');
 const { scrapeLinkedIn } = require('./scraper/linkedinScraper');
 const needsAnalyzer = require('./ai/needsAnalyzer');
@@ -9,6 +10,16 @@ const config = require('./config');
 const app = express();
 app.use(cors());
 app.use(express.json());
+
+// MongoDB Connection (NEW - Added at the top of middleware)
+mongoose.connect(process.env.MONGODB_URI || "mongodb://localhost:27017/hr-platform", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB connected successfully'))
+.catch(err => console.error('MongoDB connection error:', err));
+
+// EXISTING CODE BELOW (UNCHANGED) ---------------------------------
 
 // Aggressive lead finding endpoint
 app.post('/api/find-leads', async (req, res) => {
